@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PhysioPose Assess</title>
+  <meta name="description" content="Webcam-based functional test assessment for physiotherapy research. All processing runs locally in the browser." />
+  <meta name="theme-color" content="#0f766e" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h1 data-i18n="appTitle">PhysioPose Assess</h1>
+        <p class="subtitle" data-i18n="appSubtitle">Webcam-based functional test assessment (research use only)</p>
+      </div>
+      <div class="topbar-right">
+        <select id="langSelect" title="Language">
+          <option value="en">EN</option>
+          <option value="zh">中文</option>
+          <option value="ko">한국어</option>
+        </select>
+      </div>
+    </div>
+    <p class="privacy" data-i18n="privacyNote">All processing runs in your browser. No video or image is recorded or transmitted.</p>
+  </header>
+
+  <main id="home">
+    <section class="card">
+      <h2 data-i18n="settings">Settings</h2>
+      <div class="field-row">
+        <label for="participantId"><span data-i18n="participant">Participant ID</span></label>
+        <input id="participantId" type="text" placeholder="P01" maxlength="24" />
+      </div>
+      <div class="field-row">
+        <label for="modelSelect"><span data-i18n="model">Pose model</span></label>
+        <select id="modelSelect">
+          <option value="full" data-i18n="modelFull">Full (accurate, slower)</option>
+          <option value="lite" data-i18n="modelLite">Lite (fast, for phones)</option>
+          <option value="heavy" data-i18n="modelHeavy">Heavy (max accuracy, desktop)</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="tests">Functional tests</h2>
+      <div class="test-grid">
+        <button class="test-card" data-test="sts">
+          <span class="test-icon">🪑</span>
+          <span class="test-name" data-i18n="stsName">30-second Sit-to-Stand</span>
+          <span class="test-desc" data-i18n="stsDesc">Counts stand-ups over 30 seconds.</span>
+        </button>
+        <button class="test-card" data-test="tug">
+          <span class="test-icon">🚶</span>
+          <span class="test-name" data-i18n="tugName">Timed Up and Go</span>
+          <span class="test-desc" data-i18n="tugDesc">Times standing, walking 3 m, turning, sitting.</span>
+        </button>
+        <button class="test-card" data-test="rom">
+          <span class="test-icon">📐</span>
+          <span class="test-name" data-i18n="romName">Range of Motion</span>
+          <span class="test-desc" data-i18n="romDesc">Knee and hip flexion angles from a side view.</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="results">Saved results</h2>
+      <p id="resultsEmpty" class="muted" data-i18n="noResults">No results saved yet.</p>
+      <table id="resultsTable" hidden>
+        <thead>
+          <tr>
+            <th data-i18n="participant">Participant ID</th>
+            <th data-i18n="tests">Test</th>
+            <th data-i18n="trial">Trial</th>
+            <th data-i18n="results">Result</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      <div class="btn-row">
+        <button id="exportJson" class="btn secondary" data-i18n="exportJson">Export JSON</button>
+        <button id="exportCsv" class="btn secondary" data-i18n="exportCsv">Export CSV</button>
+        <button id="clearResults" class="btn danger" data-i18n="clear">Clear</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="test" hidden>
+    <div class="test-top">
+      <button id="backBtn" class="btn secondary small" data-i18n="back">Back</button>
+      <h2 id="testTitle">Test</h2>
+      <div class="trial-row">
+        <label for="trialSelect" data-i18n="trial">Trial</label>
+        <select id="trialSelect">
+          <option value="1" data-i18n="trial1">Trial 1</option>
+          <option value="2" data-i18n="trial2">Trial 2</option>
+          <option value="3" data-i18n="trial3">Trial 3</option>
+        </select>
+      </div>
+    </div>
+
+    <p id="protocolHint" class="protocol"></p>
+
+    <div class="test-layout">
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div id="hud" hidden><span id="hudMain">0</span><span id="hudSub"></span></div>
+        <div id="poseLost" class="pose-lost" hidden data-i18n="poseLost">Pose lost — step back into view</div>
+        <div id="loadingMask" class="loading-mask" hidden>
+          <div class="spinner"></div>
+          <div id="loadingMsg" data-i18n="loading">Loading pose model…</div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div id="calibPanel" class="card" hidden>
+          <h3 data-i18n="calibTitle">Calibration</h3>
+          <p id="calibStep" class="calib-step" data-i18n="calibSit">Sit still in the chair</p>
+          <p id="calibHint" class="muted" data-i18n="calibSitHint">Keep both feet on the floor.</p>
+          <div class="calib-count" id="calibCount">3</div>
+        </div>
+
+        <div id="romPanel" class="card" hidden>
+          <h3 data-i18n="romName">Range of Motion</h3>
+          <p class="muted" data-i18n="romHint">Turn sideways to the camera so it sees your profile.</p>
+          <div class="angle-grid">
+            <div class="angle-box"><span class="angle-label">L <span data-i18n="kneeFlexion">Knee flexion</span></span><span class="angle-value" id="kneeL">--</span></div>
+            <div class="angle-box"><span class="angle-label">R <span data-i18n="kneeFlexion">Knee flexion</span></span><span class="angle-value" id="kneeR">--</span></div>
+            <div class="angle-box"><span class="angle-label">L <span data-i18n="hipFlexion">Hip flexion</span></span><span class="angle-value" id="hipL">--</span></div>
+            <div class="angle-box"><span class="angle-label">R <span data-i18n="hipFlexion">Hip flexion</span></span><span class="angle-value" id="hipR">--</span></div>
+          </div>
+          <button id="romRecordBtn" class="btn primary wide" data-i18n="record">Record (3 s)</button>
+          <p id="romRecordProgress" class="muted" hidden></p>
+        </div>
+
+        <div id="resultPanel" class="card" hidden>
+          <h3 data-i18n="testDone">Test complete</h3>
+          <div id="resultBody"></div>
+          <button id="saveBtn" class="btn primary wide" data-i18n="save">Save result</button>
+        </div>
+
+        <div id="statusMsg" class="status"></div>
+
+        <div class="btn-row" id="controls">
+          <button id="primaryBtn" class="btn primary" data-i18n="start">Start</button>
+          <button id="stopBtn" class="btn secondary" data-i18n="stop" hidden>Stop</button>
+          <button id="flipBtn" class="btn secondary" data-i18n="flipCamera">Flip camera</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

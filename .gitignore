@@ -1,0 +1,7 @@
+# Study paperwork (research plan, IRB application, OSF preregistration) stays
+# out of the public repository — it lives only in the local working copy.
+docs/
+
+# Transient files
+tunnel_qr.png
+__pycache__/

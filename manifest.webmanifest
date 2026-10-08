@@ -1,0 +1,15 @@
+{
+  "name": "PhysioPose Assess",
+  "short_name": "PhysioPose",
+  "description": "Webcam-based functional test assessment for physiotherapy research. All processing runs locally.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
